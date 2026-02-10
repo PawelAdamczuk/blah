@@ -59,7 +59,7 @@
       <RuntimeFoldersToDelete Include="$(PublishDir)runtimes\unix-*" />
       <RuntimeFoldersToDelete Include="$(PublishDir)runtimes\win-arm*" />
       <RuntimeFoldersToDelete Include="$(PublishDir)runtimes\win-x86" />
-      <RuntimeFoldersToDelete Include="$(PublishDir)runtimes\vulkan" />
+      <!-- Keep vulkan folder for GPU acceleration -->
     </ItemGroup>
     <Delete Files="@(FilesToDelete)" />
     <RemoveDir Directories="@(RuntimeFoldersToDelete)" />
