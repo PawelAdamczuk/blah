@@ -1,0 +1,68 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>Blah</AssemblyName>
+    <RootNamespace>Blah</RootNamespace>
+    
+    <!-- Version Information -->
+    <Version>1.0.2</Version>
+    <AssemblyVersion>1.0.2</AssemblyVersion>
+    <FileVersion>1.0.2</FileVersion>
+    
+    <!-- Self-contained deployment -->
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishTrimmed>false</PublishTrimmed>
+    
+    <!-- Exclude debug symbols from publish -->
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="Whisper.net" Version="1.9.0" />
+    <PackageReference Include="Whisper.net.Runtime" Version="1.9.0" />
+    <PackageReference Include="Whisper.net.Runtime.Vulkan" Version="1.9.0" />
+  </ItemGroup>
+
+  <!-- Exclude model files and prompt files from publishing -->
+  <ItemGroup>
+    <Content Remove="ggml-*.bin" />
+    <Content Remove="prompt.txt" />
+    <Content Remove="prompt.md" />
+    <None Include="ggml-*.bin">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Include="prompt.txt" Condition="Exists('prompt.txt')">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+    <None Include="prompt.md" Condition="Exists('prompt.md')">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <!-- Clean up unnecessary files after publish -->
+  <Target Name="CleanupPublish" AfterTargets="Publish">
+    <ItemGroup>
+      <!-- Remove debug symbols -->
+      <FilesToDelete Include="$(PublishDir)**\*.pdb" />
+      <!-- Remove macOS-specific files -->
+      <FilesToDelete Include="$(PublishDir)ggml-metal.metal" />
+      <!-- Remove non-Windows runtimes -->
+      <RuntimeFoldersToDelete Include="$(PublishDir)runtimes\linux-*" />
+      <RuntimeFoldersToDelete Include="$(PublishDir)runtimes\osx-*" />
+      <RuntimeFoldersToDelete Include="$(PublishDir)runtimes\unix-*" />
+      <RuntimeFoldersToDelete Include="$(PublishDir)runtimes\win-arm*" />
+      <RuntimeFoldersToDelete Include="$(PublishDir)runtimes\win-x86" />
+      <RuntimeFoldersToDelete Include="$(PublishDir)runtimes\vulkan" />
+    </ItemGroup>
+    <Delete Files="@(FilesToDelete)" />
+    <RemoveDir Directories="@(RuntimeFoldersToDelete)" />
+  </Target>
+
+</Project>
