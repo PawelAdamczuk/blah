@@ -33,7 +33,7 @@ internal class Transcriber : IDisposable
         
         Console.WriteLine($"Loading {modelType} model...");
         
-        // Wrap model loading in try-catch to detect corruption
+        // Wrap model loading in try-catch to detect issues
         try
         {
             _whisperFactory = WhisperFactory.FromPath(modelPath);
@@ -41,11 +41,41 @@ internal class Transcriber : IDisposable
         catch (Exception ex)
         {
             Console.WriteLine($"Failed to load model: {ex.Message}");
-            Console.WriteLine($"Deleting corrupted model file: {modelFileName}");
-            File.Delete(modelPath);
-            throw new InvalidOperationException(
-                $"Failed to load the whisper model. The file may be corrupted. " +
-                $"Please restart the application to re-download.", ex);
+            Console.WriteLine($"Exception type: {ex.GetType().Name}");
+            
+            // Check if file actually exists and has reasonable size
+            if (File.Exists(modelPath))
+            {
+                long fileSize = new FileInfo(modelPath).Length;
+                long expectedSize = GetExpectedModelSize(modelType);
+                Console.WriteLine($"Model file exists. Size: {FormatSize(fileSize)} (expected: {FormatSize(expectedSize)})");
+                
+                // Only delete if file is clearly too small (likely corrupted)
+                if (fileSize < expectedSize * 0.9) // Less than 90% of expected size
+                {
+                    Console.WriteLine($"File appears incomplete or corrupted. Deleting...");
+                    File.Delete(modelPath);
+                    throw new InvalidOperationException(
+                        $"Failed to load the whisper model. The file appears corrupted. " +
+                        $"Please restart the application to re-download.", ex);
+                }
+                else
+                {
+                    Console.WriteLine($"File size looks correct. This may be a driver or GPU issue.");
+                    throw new InvalidOperationException(
+                        $"Failed to load the whisper model. Error: {ex.Message}\n" +
+                        $"The model file appears valid but cannot be loaded. This could be due to:\n" +
+                        $"  - Missing or outdated GPU drivers (for Vulkan/GPU acceleration)\n" +
+                        $"  - Incompatible GPU\n" +
+                        $"  - System configuration issue\n" +
+                        $"Try updating your GPU drivers or running on a different machine.", ex);
+                }
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    $"Model file not found at: {modelPath}", ex);
+            }
         }
         
         string? prompt = LoadPromptFromFile();
